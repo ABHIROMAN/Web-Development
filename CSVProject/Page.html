@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <style>
+        #drop-area {
+            width: 100%;
+            height: 100px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #drop-area.highlight {
+            background-color: #e0e0e0;
+        }
+
+        .column-button {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+
+        .All-column-button {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+
+        #username-display{
+            position: fixed; 
+            bottom: 0; 
+            right: 0; 
+            padding: 10px;
+            color : black;  
+        }
+    </style>    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/habibmhamadi/multi-select-tag/dist/css/multi-select-tag.css">
+
+</head>
+
+<body>
+    <div id="drop-area">
+        <p>Drag and drop a CSV file here</p>
+    </div>
+    <div id="select-colums-to-import">
+        <p>Select columns to be imported</p>
+        <div id="columns"></div>
+        <button id="getOutput">Get Output</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/habibmhamadi/multi-select-tag/dist/js/multi-select-tag.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var dropArea = document.getElementById('drop-area');
+            var columnsDiv = document.getElementById('columns');
+            var getOutputButton = document.getElementById('getOutput');
+            var selectedColumns;
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            getOutputButton.addEventListener('click', getSelectedColumns, false);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+
+            function handleDrop(e) {
+                var dt = e.dataTransfer;
+                var files = dt.files;
+                handleFiles(files);
+            }
+
+            function handleFiles(files) {
+                [...files].forEach(uploadFile);
+            }
+            var csvData;
+            var columnsData;
+            function uploadFile(file) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    csvData = e.target.result;
+                    console.log(csvData);
+                    columnsData = getColumns(csvData);
+                    console.log(columnsData);
+                    createButtons(columnsData);
+                };
+
+                reader.readAsText(file);
+            }
+
+            function getColumns(csvData) {
+                var lines = csvData.split('\n');
+                return lines[0].split(',');
+            }
+
+            function createButtons(columns) {
+                var dropdown = document.createElement('select');
+                dropdown.multiple = true;
+                dropdown.classList.add('column-dropdown');
+                dropdown.id = 'myDropdown'
+                columns.forEach(function (column) {
+                    var option = document.createElement('option');
+                    option.text = column;
+                    dropdown.add(option);
+                });
+                columnsDiv.appendChild(dropdown);
+                new MultiSelectTag('myDropdown');
+            }
+
+            function getSelectedColumns() {
+                var greenButtons = document.querySelectorAll('.mult-select-tag .item-container');
+                var output = [];
+
+                greenButtons.forEach(function (button) {
+                    output.push(button.innerText);
+                });
+
+                selectedColumns = output.join(', ');
+                createNewCsv(csvData, output);
+            }
+            var newCsvData = [];
+            function createNewCsv(originalCsvData, selectedColumns) {
+                // Split the original CSV data into rows
+                var rows = originalCsvData.split('\n');
+
+                newCsvData.push(selectedColumns.join(','));
+
+                // Iterate through rows and extract selected columns
+                for (var i = 1; i < rows.length; i++) {
+                    var rowData = rows[i].split(',')
+                    // Create a new row with selected columns
+                    var newRow = selectedColumns.map(function (col) {
+                        return rowData[columnsData.indexOf(col)];
+                    });
+                    for (var j = 0; j < newRow.length; j++) {
+                        if (typeof newRow[j] === 'undefined') {
+                            newRow[j] = rowData[rowData.length - 1];
+                        }
+                    }
+                    // Add the new row to the array
+                    newCsvData.push(newRow.join(','));
+
+                }
+                var newCsvString = newCsvData.join('\n');
+
+                google.script.run.importCSV(newCsvString);   
+            }
+
+        });
+        
+    </script>
+    <div id="username-display">
+        --MANSI SAHU (20BAI10158)
+    </div>
+</body>
+
+</html>

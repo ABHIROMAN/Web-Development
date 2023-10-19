@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="dropzone" ondrop="handleDrop(event)">
+        Drop your CSV file here
+      </div>
+
+    <script>
+       function handleDrop(event) {
+  // Prevent the default drop behavior.
+  event.preventDefault();
+
+  // Get the dropped file.
+  const file = event.dataTransfer.files[0];
+
+  // Check if the file is a CSV file.
+  if (file.type !== "text/csv") {
+    alert("Please drop a CSV file.");
+    return;
+  }
+
+  // Read the CSV file.
+  const reader = new FileReader();
+  reader.onload = function() {
+    // The CSV file contents are now in the `reader.result` property.
+    // We can now use this data to populate the modal dialog.
+  };
+  reader.readAsText(file);
+} 
+    </script>
+    <div class="modal">
+        <div class="modal-content">
+          <h3>Select columns to import</h3>
+          <ul id="column-list"></ul>
+          <button class="btn btn-primary" onclick="importData()">Import</button>
+        </div>
+      </div>
+</body>
+</html>
